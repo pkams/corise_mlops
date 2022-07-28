@@ -7,6 +7,10 @@ from sentence_transformers import SentenceTransformer
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
 
+import time
+from datetime import datetime
+import json
+
 GLOBAL_CONFIG = {
     "model": {
         "featurizer": {
@@ -18,7 +22,7 @@ GLOBAL_CONFIG = {
         }
     },
     "service": {
-        "log_destination": "./data/logs.out"
+        "log_destination": "../data/logs.out"
     }
 }
 
@@ -45,11 +49,11 @@ class TransformerFeaturizer(BaseEstimator, TransformerMixin):
 
     #transformation: return the encoding of the document as returned by the transformer model
     def transform(self, X, y=None):
-        X_t = []
-        for doc in X:
-            X_t.append(self.sentence_transformer_model.encode(doc))
-        return X_t
-
+        #X_t = []
+        #for doc in X:
+        #    X_t.append(self.sentence_transformer_model.encode(doc, normalize_embeddings=True))
+        #return X_t
+        return self.sentence_transformer_model.encode(X, normalize_embeddings=True)
 
 class NewsCategoryClassifier:
     def __init__(self, config: dict) -> None:
@@ -84,7 +88,8 @@ class NewsCategoryClassifier:
             ...
         }
         """
-        result = self.pipeline.predict_proba(model_input['description'])[0]
+
+        result = self.pipeline.predict_proba([model_input.description]).flatten()
         classes = self.classes
         return dict(zip(classes, result))
 
@@ -97,7 +102,7 @@ class NewsCategoryClassifier:
 
         Output format: predicted label for the model input
         """
-        return self.pipeline.predict(model_input['description'])
+        return self.pipeline.predict([model_input.description])
 
 
 app = FastAPI()
@@ -112,6 +117,11 @@ def startup_event():
         Access to the model instance and log file will be needed in /predict endpoint, make sure you
         store them as global variables
     """
+    global log_file
+    global classifier
+    classifier = NewsCategoryClassifier(GLOBAL_CONFIG)
+    log_file = open(GLOBAL_CONFIG["service"]["log_destination"], "a")
+
     logger.info("Setup completed")
 
 
@@ -123,6 +133,7 @@ def shutdown_event():
         1. Make sure to flush the log file and close any file pointers to avoid corruption
         2. Any other cleanups
     """
+    log_file.close()
     logger.info("Shutting down application")
 
 
@@ -143,7 +154,23 @@ def predict(request: PredictRequest):
         }
         3. Construct an instance of `PredictResponse` and return
     """
-    return {}
+    # Inference
+    t0 = time.time()
+    probs = classifier.predict_proba(request)
+    pred = classifier.predict_label(request)[0]
+    t1 = time.time()
+    inference_time = t1 - t0
+
+    # Logging
+    log_info = {
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "request": request.dict(),
+        "prediction": {'label': pred, 'scores':probs},
+        "latency": inference_time,
+    }
+    log_file.write(f"{json.dumps(log_info)}\n")
+    log_file.flush()
+    return PredictResponse(scores=probs, label=pred)
 
 
 @app.get("/")
@@ -156,8 +183,8 @@ if __name__ == '__main__':
       "source": "<value>",
       "url": "<value>",
       "title": "<value>",
-      "description": ["This is a test phrase about Football and Voleyball."]
+      "description": "This is a test phrase about Football and Voleyball."
     }
-    print(test.predict_proba(input_test))
+    #print(test.predict_proba(input_test))
 
-    print(test.predict_label(input_test)[0])
+    #print(test.predict_label(input_test))

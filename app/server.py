@@ -14,7 +14,7 @@ GLOBAL_CONFIG = {
             "sentence_transformer_embedding_dim": 768
         },
         "classifier": {
-            "serialized_model_path": "./data/news_classifier.joblib"
+            "serialized_model_path": "../data/news_classifier.joblib"
         }
     },
     "service": {
@@ -59,8 +59,12 @@ class NewsCategoryClassifier:
         1. Load the sentence transformer model and initialize the `featurizer` of type `TransformerFeaturizer` (Hint: revisit Week 1 Step 4)
         2. Load the serialized model as defined in GLOBAL_CONFIG['model'] into memory and initialize `model`
         """
-        featurizer = None
-        model = None
+        sentence_transfomer = SentenceTransformer('sentence-transformers/{model}'.format(
+            model=GLOBAL_CONFIG['model']['featurizer']["sentence_transformer_model"]))
+        dim = GLOBAL_CONFIG['model']['featurizer']["sentence_transformer_embedding_dim"]
+        featurizer = TransformerFeaturizer(dim, sentence_transfomer)
+        model = joblib.load(GLOBAL_CONFIG['model']['classifier']["serialized_model_path"])
+        self.classes = model.classes_
         self.pipeline = Pipeline([
             ('transformer_featurizer', featurizer),
             ('classifier', model)
@@ -80,7 +84,9 @@ class NewsCategoryClassifier:
             ...
         }
         """
-        return {}
+        result = self.pipeline.predict_proba(model_input['description'])[0]
+        classes = self.classes
+        return dict(zip(classes, result))
 
     def predict_label(self, model_input: dict) -> str:
         """
@@ -91,7 +97,7 @@ class NewsCategoryClassifier:
 
         Output format: predicted label for the model input
         """
-        return ""
+        return self.pipeline.predict(model_input['description'])
 
 
 app = FastAPI()
@@ -143,3 +149,15 @@ def predict(request: PredictRequest):
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
+
+if __name__ == '__main__':
+    test = NewsCategoryClassifier(GLOBAL_CONFIG)
+    input_test = {
+      "source": "<value>",
+      "url": "<value>",
+      "title": "<value>",
+      "description": ["This is a test phrase about Football and Voleyball."]
+    }
+    print(test.predict_proba(input_test))
+
+    print(test.predict_label(input_test)[0])

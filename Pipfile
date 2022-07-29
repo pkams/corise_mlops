@@ -11,6 +11,7 @@ loguru = "*"
 scikit-learn = "*"
 numpy = "*"
 sentence-transformers = "*"
+pytest = "*"
 
 [dev-packages]
 

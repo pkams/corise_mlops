@@ -12,7 +12,7 @@ You can run the api in two ways:
     pip install pipenv
     pipenv install # install the Pipefile dependencies
     pipenv run uvicorn app.server:app --reload
-    # Visit Swagger site: http://localhost:80/docs 
+    # Visit api docs: http://localhost:80/docs 
    
 ```
 or
@@ -21,5 +21,5 @@ or
    ```bash
    docker build --platform linux/amd64 -t newsclassifier_api .
    docker run -p 80:80 newsclassifier_api 
-   # Visit Swagger site: http://localhost:80/docs
+   # Visit api docs: http://localhost:80/docs
    ```

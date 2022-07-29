@@ -185,6 +185,6 @@ if __name__ == '__main__':
       "title": "<value>",
       "description": "This is a test phrase about Football and Voleyball."
     }
-    #print(test.predict_proba(input_test))
+    print(test.predict_proba(input_test))
 
-    #print(test.predict_label(input_test))
+    print(test.predict_label(input_test))

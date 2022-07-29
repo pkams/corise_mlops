@@ -1,4 +1,4 @@
-FROM python:3.9
+FROM python:3.8
 
 WORKDIR /project
 
@@ -6,7 +6,8 @@ WORKDIR /project
 COPY . /project/
 
 # Install python requirements from requirements.txt
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
+RUN pip install pipenv
+RUN pipenv install --system --deploy
 
 WORKDIR /project/app
 

@@ -10,8 +10,13 @@
 #
 # The different actions are explained further in comments below.
 
+format:
+	pipenv run black .
+	pipenv run isort .
+# pipenv run pylint
+
 test:
-	echo "hello world"
+	pipenv run pytest
 
 # ---
 # We name the container so when we run it. We see this name

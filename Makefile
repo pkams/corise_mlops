@@ -41,3 +41,6 @@ exec:
 # Stop the container (notice we use the name of the container)
 # command in new terminal: make stop
 	docker stop $(CONTAINER_NAME)
+
+
+# *** All credits to this Makefile are to Jerome from Corise MLOps Course ***
